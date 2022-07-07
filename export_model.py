@@ -1,5 +1,6 @@
 import argparse
 import functools
+import os
 
 import torch
 
@@ -20,4 +21,5 @@ model.load_state_dict(torch.load(args.model_path))
 model = torch.nn.Sequential(model, torch.nn.Softmax())
 
 # 保存预测模型
+os.makedirs(os.path.dirname(args.save_path), exist_ok=True)
 torch.save(model, args.save_path)

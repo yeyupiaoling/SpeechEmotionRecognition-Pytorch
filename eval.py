@@ -51,11 +51,10 @@ def evaluate():
         output = model(audio)
         # 计算准确率
         output = output.data.cpu().numpy()
-        output = np.argmax(output, axis=1)
-        label = label.data.cpu().numpy()
-        acc = np.mean((output == label).astype(int))
         # 模型预测标签
-        pred = np.argsort(output, descending=True)[:, 0].tolist()
+        pred = np.argmax(output, axis=1)
+        label = label.data.cpu().numpy()
+        acc = np.mean((pred == label).astype(int))
         preds.extend(pred)
         # 真实标签
         labels.extend(label.tolist())
