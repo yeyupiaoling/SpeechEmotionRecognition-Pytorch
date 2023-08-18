@@ -33,5 +33,5 @@ def create_standard(config_file):
 
 
 if __name__ == '__main__':
-    # get_data_list('dataset/audios', 'dataset')
+    get_data_list('dataset/audios', 'dataset')
     create_standard('configs/bi_lstm.yml')

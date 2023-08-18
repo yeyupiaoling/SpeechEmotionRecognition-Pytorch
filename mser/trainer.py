@@ -23,7 +23,6 @@ from mser import SUPPORT_MODEL, __version__
 from mser.data_utils.collate_fn import collate_fn
 from mser.data_utils.featurizer import AudioFeaturizer
 from mser.data_utils.reader import CustomDataset
-from mser.data_utils.spec_aug import SpecAug
 from mser.metric.metrics import accuracy
 from mser.models.bidirectional_lstm import BidirectionalLSTM
 from mser.utils.logger import setup_logger
@@ -64,9 +63,6 @@ class MSERTrainer(object):
         if platform.system().lower() == 'windows':
             self.configs.dataset_conf.dataLoader.num_workers = 0
             logger.warning('Windows系统不支持多线程读取数据，已自动关闭！')
-        # 特征增强
-        self.spec_aug = SpecAug(**self.configs.dataset_conf.get('spec_aug_args', {}))
-        self.spec_aug.to(self.device)
         # 获取分类标签
         with open(self.configs.dataset_conf.label_list_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
@@ -131,7 +127,6 @@ class MSERTrainer(object):
         data = []
         for i in tqdm(range(len(test_dataset))):
             feature, _ = test_dataset[i]
-
             data.append(feature)
         scaler = StandardScaler().fit(data)
         joblib.dump(scaler, self.configs.dataset_conf.scaler_path)
@@ -370,7 +365,7 @@ class MSERTrainer(object):
         # 获取数据
         self.__setup_dataloader(is_train=True)
         # 获取模型
-        self.__setup_model(input_size=self.train_dataset.audio_featurizer.feature_dim, is_train=True)
+        self.__setup_model(input_size=self.test_dataset.audio_featurizer.feature_dim, is_train=True)
 
         # 支持多卡训练
         if nranks > 1 and self.use_gpu:
