@@ -151,7 +151,11 @@ Estimated Total Size (MB): 7.49
 
 # 评估
 每轮训练结束可以执行评估，评估会出来输出准确率，还保存了混合矩阵图片，保存路径`output/images/`，如下。
-![混合矩阵](docs/images/image1.png)
+<br/>
+<div align="center">
+<img src="docs/images/image1.png" alt="打赏作者" width="600">
+</div>
+
 
 # 预测
 
