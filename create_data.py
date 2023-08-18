@@ -1,10 +1,6 @@
 import os
-import joblib
-from tqdm import tqdm
 
-from data_utils.reader import load_audio
-
-from sklearn.preprocessing import StandardScaler
+from mser.trainer import MSERTrainer
 
 
 # 生成数据列表
@@ -31,17 +27,11 @@ def get_data_list(audio_path, list_path):
 
 
 # 生成归一化文件
-def create_standard(list_path, scaler_path):
-    with open(os.path.join(list_path, 'train_list.txt'), 'r', encoding='utf-8') as f:
-        lines = f.readlines()
-    data = []
-    for line in tqdm(lines):
-        path, label = line.split('\t')
-        data.append(load_audio(path, mode='infer'))
-    scaler = StandardScaler().fit(data)
-    joblib.dump(scaler, scaler_path)
+def create_standard(config_file):
+    trainer = MSERTrainer(configs=config_file)
+    trainer.get_standard_file()
 
 
 if __name__ == '__main__':
-    get_data_list('dataset/audios', 'dataset')
-    create_standard('dataset', 'dataset/standard.m')
+    # get_data_list('dataset/audios', 'dataset')
+    create_standard('configs/bi_lstm.yml')

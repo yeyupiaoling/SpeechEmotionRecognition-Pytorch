@@ -1,5 +1,10 @@
+__pycache__/
 .idea/
-*/__pycache__
+build/
+dist/
+macls.egg-info/
 dataset/
+log/
 output/
-pretrained/
+models/
+test.py
