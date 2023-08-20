@@ -23,6 +23,8 @@
 |:-----------------:|:---------:|:-----:|:-------:|:----:|:----:|
 | BidirectionalLSTM |    1.8    | Flank | RAVDESS |  8   | 0.78 |
 
+说明：
+1. RAVDESS数据集只使用`Audio_Speech_Actors_01-24.zip`
 
 ## 安装环境
 
@@ -47,7 +49,7 @@ python setup.py install
 
 ## 准备数据
 
-生成数据列表，用于下一步的读取需要，项目默认提供一个数据集[RAVDESS](https://zenodo.org/record/1188976/files/Audio_Speech_Actors_01-24.zip?download=1)，下载这个数据集并解压到`dataset`目录下。
+生成数据列表，用于下一步的读取需要，项目默认提供一个数据集[RAVDESS](https://zenodo.org/record/1188976/files/Audio_Speech_Actors_01-24.zip?download=1)，这个数据集的[介绍页面](https://zenodo.org/record/1188976#.XsAXemgzaUk)，这个数据包含中性、平静、快乐、悲伤、愤怒、恐惧、厌恶、惊讶八种情感，本项目只使用里面的`Audio_Speech_Actors_01-24.zip`，数据集，说话的语句只有`Kids are talking by the door`和`Dogs are sitting by the door`，可以说这个训练集是非常简单的。下载这个数据集并解压到`dataset`目录下。
 
 然后执行`create_data.py`里面的`create_ravdess_list('dataset/Audio_Speech_Actors_01-24', 'dataset')`函数即可生成数据列表，同时也生成归一化文件，具体看代码。
 
