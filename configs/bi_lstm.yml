@@ -31,7 +31,7 @@ dataset_conf:
     # 训练的批量大小
     batch_size: 32
     # 读取数据的线程数量
-    num_workers: 4
+    num_workers: 8
   # 数据增强参数
   aug_conf:
     # 是否使用语速扰动增强

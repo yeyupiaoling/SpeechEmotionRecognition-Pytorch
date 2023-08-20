@@ -1,12 +1,12 @@
 # 基于Pytorch实现的语音情感识别系统
 
-本项目是一个语音情感识别项目，目前效果一般，供大家学习使用。
+本项目是一个语音情感识别项目，目前效果一般，供大家学习使用。后面会持续优化，提高准确率，如果同学们有好的建议，也欢迎来探讨。
 
-
-**欢迎大家扫码入QQ群讨论**，或者直接搜索QQ群号`758170167`，问题答案为博主Github的ID`yeyupiaoling`。
+**欢迎大家扫码入知识星球或者QQ群讨论，知识星球里面提供项目的模型文件和博主其他相关项目的模型文件，也包括其他一些资源。**
 
 <div align="center">
-  <img src="docs/images/qq.png"/>
+  <img src="https://yeyupiaoling.cn/zsxq.png" alt="知识星球" width="400">
+  <img src="https://yeyupiaoling.cn/qq.png" alt="QQ群" width="400">
 </div>
 
 
@@ -16,6 +16,12 @@
  - Python 3.8
  - Pytorch 1.13.1
  - Windows 10 or Ubuntu 18.04
+
+# 模型测试表
+
+|        模型         | Params(M) | 预处理方法 |   数据集   | 类别数量 | 准确率 |
+|:-----------------:|:---------:|:-----:|:-------:|:----:|:---:|
+| BidirectionalLSTM |    1.8    | Flank | RAVDESS |  8   |     |
 
 
 ## 安装环境
@@ -41,19 +47,29 @@ python setup.py install
 
 ## 准备数据
 
-生成数据列表，用于下一步的读取需要，`audio_path`为音频文件路径，用户需要提前把音频数据集存放在`dataset/audio`目录下，每个文件夹存放一个类别的音频数据，每条音频数据长度在3秒以上，如 `dataset/audio/angry/······`。`audio`是数据列表存放的位置，生成的数据类别的格式为 `音频路径\t音频对应的类别标签`，音频路径和标签用制表符 `\t`分开。读者也可以根据自己存放数据的方式修改以下函数。
+生成数据列表，用于下一步的读取需要，项目默认提供一个数据集[RAVDESS](https://zenodo.org/record/1188976/files/Audio_Speech_Actors_01-24.zip?download=1)，下载这个数据集并解压到`dataset`目录下。
 
-执行`create_data.py`即可生成数据列表，同时也生成归一化文件，具体看代码。
+然后执行`create_data.py`里面的`create_ravdess_list('dataset/Audio_Speech_Actors_01-24', 'dataset')`函数即可生成数据列表，同时也生成归一化文件，具体看代码。
+
+```shell
+python create_data.py
+```
+
+如果自定义数据集，可以按照下面格式，`audio_path`为音频文件路径，用户需要提前把音频数据集存放在`dataset/audio`目录下，每个文件夹存放一个类别的音频数据，每条音频数据长度在3秒左右，如 `dataset/audio/angry/······`。`audio`是数据列表存放的位置，生成的数据类别的格式为 `音频路径\t音频对应的类别标签`，音频路径和标签用制表符 `\t`分开。读者也可以根据自己存放数据的方式修改以下函数。
+
+执行`create_data.py`里面的`get_data_list('dataset/audios', 'dataset')`函数即可生成数据列表，同时也生成归一化文件，具体看代码。
 ```shell
 python create_data.py
 ```
 
 生成的列表是长这样的，前面是音频的路径，后面是该音频对应的标签，从0开始，路径和标签之间用`\t`隔开。
 ```shell
-dataset/audio/angry/104817-4-0-2.wav	4
-dataset/audio/fear/105029-7-2-5.wav	3
-dataset/audio/happy/107228-5-0-0.wav	5
+dataset/Audio_Speech_Actors_01-24/Actor_13/03-01-01-01-02-01-13.wav	0
+dataset/Audio_Speech_Actors_01-24/Actor_01/03-01-02-01-01-01-01.wav	1
+dataset/Audio_Speech_Actors_01-24/Actor_01/03-01-03-02-01-01-01.wav	2
 ```
+
+**注意：** `create_data.py`里面的`create_standard('configs/bi_lstm.yml')`函数必须要执行的，这个是生成归一化的文件。
 
 
 ## 训练

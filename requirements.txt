@@ -16,4 +16,4 @@ pyyaml>=5.4.1
 scikit-learn>=1.0.2
 torchinfo>=1.7.2
 av>=10.0.0
-joblib
+joblib>=1.2.0

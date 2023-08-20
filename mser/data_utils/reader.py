@@ -58,7 +58,7 @@ class CustomDataset(Dataset):
             self.lines = f.readlines()
         # 获取特征器
         self.audio_featurizer = audio_featurizer
-        if scaler_path:
+        if scaler_path and self.mode != 'create_data':
             self.scaler = joblib.load(scaler_path)
 
     def __getitem__(self, idx):

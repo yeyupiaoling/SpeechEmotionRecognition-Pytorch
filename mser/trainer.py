@@ -114,7 +114,7 @@ class MSERTrainer(object):
         audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                            method_args=self.configs.preprocess_conf.get('method_args', {}))
         # 获取测试数据
-        test_dataset = CustomDataset(data_list_path=self.configs.dataset_conf.test_list,
+        test_dataset = CustomDataset(data_list_path=self.configs.dataset_conf.train_list,
                                      audio_featurizer=audio_featurizer,
                                      scaler_path=self.configs.dataset_conf.scaler_path,
                                      do_vad=self.configs.dataset_conf.do_vad,
