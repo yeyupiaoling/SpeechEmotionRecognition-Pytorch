@@ -238,7 +238,7 @@ class MSERTrainer(object):
                 last_epoch = json_data['last_epoch'] - 1
                 best_acc = json_data['accuracy']
             self.optimizer.step()
-            self.scheduler.step(last_epoch * len(self.train_loader))
+            [self.scheduler.step() for _ in range(last_epoch * len(self.train_loader))]
             logger.info('成功恢复模型参数和优化方法参数：{}'.format(resume_model))
         return last_epoch, best_acc
 
