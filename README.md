@@ -44,7 +44,7 @@ python -m pip install mser -U -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```shell
 git clone https://github.com/yeyupiaoling/SpeechEmotionRecognition-Pytorch.git
 cd SpeechEmotionRecognition-Pytorch/
-python setup.py install
+pip install .
 ```
 
 ## 准备数据
