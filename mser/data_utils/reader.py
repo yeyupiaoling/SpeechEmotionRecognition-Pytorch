@@ -86,11 +86,9 @@ class CustomDataset(Dataset):
             # decibel normalization
             if self._use_dB_normalization:
                 audio_segment.normalize(target_db=self._target_dB)
-            if self.max_duration > audio_segment.duration:
-                diff_duration = (self.max_duration * audio_segment.sample_rate) - audio_segment.num_samples
-                audio_segment._samples = np.pad(audio_segment.samples, (0, diff_duration), 'wrap')
             # 裁剪需要的数据
-            audio_segment.crop(duration=self.max_duration, mode=self.mode)
+            if audio_segment.duration > self.max_duration:
+                audio_segment.crop(duration=self.max_duration, mode=self.mode)
             feature = self.audio_featurizer(audio_segment.samples, sample_rate=audio_segment.sample_rate)
         # 归一化
         if self.mode != 'create_data':

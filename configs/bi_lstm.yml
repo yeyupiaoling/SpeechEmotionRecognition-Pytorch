@@ -3,7 +3,7 @@ dataset_conf:
   # 过滤最短的音频长度
   min_duration: 0.5
   # 最长的音频长度，大于这个长度会裁剪掉
-  max_duration: 3
+  max_duration: 5
   # 是否裁剪静音片段
   do_vad: False
   # 音频的采样率
@@ -25,7 +25,7 @@ dataset_conf:
     # 评估的批量大小
     batch_size: 1
     # 最长的音频长度
-    max_duration: 3
+    max_duration: 5
   # 数据加载器参数
   dataLoader:
     # 训练的批量大小
@@ -47,7 +47,7 @@ dataset_conf:
 
 # 数据预处理参数
 preprocess_conf:
-  # 音频预处理方法，支持：CustomFeatures、Emotion2Vec
+  # 音频预处理方法，支持：CustomFeature、Emotion2Vec
   feature_method: 'Emotion2Vec'
   method_args:
     granularity: 'utterance'

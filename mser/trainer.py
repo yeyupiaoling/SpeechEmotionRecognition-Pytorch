@@ -24,8 +24,8 @@ from mser.data_utils.collate_fn import collate_fn
 from mser.data_utils.featurizer import AudioFeaturizer
 from mser.data_utils.reader import CustomDataset
 from mser.metric.metrics import accuracy
-from mser.models.bi_lstm import BiLSTM
 from mser.models.base_model import BaseModel
+from mser.models.bi_lstm import BiLSTM
 from mser.utils.logger import setup_logger
 from mser.utils.scheduler import WarmupCosineSchedulerLR
 from mser.utils.utils import dict_to_object, plot_confusion_matrix, print_arguments
@@ -121,7 +121,7 @@ class MSERTrainer(object):
         test_dataset = CustomDataset(data_list_path=self.configs.dataset_conf.train_list,
                                      audio_featurizer=audio_featurizer,
                                      do_vad=self.configs.dataset_conf.do_vad,
-                                     max_duration=self.configs.dataset_conf.eval_conf.max_duration,
+                                     max_duration=self.configs.dataset_conf.max_duration,
                                      min_duration=self.configs.dataset_conf.min_duration,
                                      sample_rate=self.configs.dataset_conf.sample_rate,
                                      use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
@@ -140,12 +140,13 @@ class MSERTrainer(object):
         os.makedirs(save_dir, exist_ok=True)
         audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                            method_args=self.configs.preprocess_conf.get('method_args', {}))
-        for data_list in [self.configs.dataset_conf.train_list, self.configs.dataset_conf.test_list]:
+        for i, data_list in enumerate([self.configs.dataset_conf.train_list, self.configs.dataset_conf.test_list]):
+            max_duration = self.configs.dataset_conf.max_duration if i == 0 else self.configs.dataset_conf.eval_conf.max_duration
             # 获取测试数据
             test_dataset = CustomDataset(data_list_path=data_list,
                                          audio_featurizer=audio_featurizer,
                                          do_vad=self.configs.dataset_conf.do_vad,
-                                         max_duration=self.configs.dataset_conf.eval_conf.max_duration,
+                                         max_duration=max_duration,
                                          min_duration=self.configs.dataset_conf.min_duration,
                                          sample_rate=self.configs.dataset_conf.sample_rate,
                                          use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
@@ -156,7 +157,7 @@ class MSERTrainer(object):
                 for i in tqdm(range(len(test_dataset))):
                     feature, label = test_dataset[i]
                     label = int(label)
-                    save_path = os.path.join(save_dir, f'{int(time.time()*1000)}.npy')
+                    save_path = os.path.join(save_dir, f'{int(time.time() * 1000)}.npy')
                     np.save(save_path, feature)
                     f.write(f'{save_path}\t{label}\n')
             logger.info(f'{data_list}列表中的数据已提取特征完成，新列表为：{save_data_list}')
@@ -180,7 +181,7 @@ class MSERTrainer(object):
             self.model = torch.compile(self.model, mode="reduce-overhead")
         # print(self.model)
         # 获取损失函数
-        weight = torch.tensor(self.configs.train_conf.loss_weight, dtype=torch.float, device=self.device)\
+        weight = torch.tensor(self.configs.train_conf.loss_weight, dtype=torch.float, device=self.device) \
             if self.configs.train_conf.loss_weight is not None else None
         self.loss = torch.nn.CrossEntropyLoss(weight=weight)
         if is_train:

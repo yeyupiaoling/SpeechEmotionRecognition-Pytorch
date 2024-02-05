@@ -23,7 +23,7 @@ class AudioFeaturizer(object):
         logger.info(f'使用的特征方法为 {self._feature_method}')
 
     def __call__(self, x, sample_rate: float) -> np.ndarray:
-        if self._feature_method == 'CustomFeatures':
+        if self._feature_method == 'CustomFeature':
             return self.custom_features(x, sample_rate)
         elif self._feature_method == 'Emotion2Vec':
             return self.emotion2vec_features(x)
@@ -116,7 +116,7 @@ class AudioFeaturizer(object):
         :return: 特征大小
         :rtype: int
         """
-        if self._feature_method == 'CustomFeatures':
+        if self._feature_method == 'CustomFeature':
             return 312
         elif self._feature_method == 'Emotion2Vec':
             return 768

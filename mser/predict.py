@@ -55,7 +55,7 @@ class MSERPredictor:
         # 获取模型
         if self.configs.use_model == 'BiLSTM':
             self.predictor = BiLSTM(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf)
-        if self.configs.use_model == 'BaseModel':
+        elif self.configs.use_model == 'BaseModel':
             self.predictor = BaseModel(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf)
         else:
             raise Exception(f'{self.configs.use_model} 模型不存在！')
