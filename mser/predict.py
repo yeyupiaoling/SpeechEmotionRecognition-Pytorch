@@ -10,7 +10,8 @@ import yaml
 from mser import SUPPORT_MODEL
 from mser.data_utils.audio import AudioSegment
 from mser.data_utils.featurizer import AudioFeaturizer
-from mser.models.bidirectional_lstm import BidirectionalLSTM
+from mser.models.bi_lstm import BiLSTM
+from mser.models.base_model import BaseModel
 from mser.utils.logger import setup_logger
 from mser.utils.utils import dict_to_object, print_arguments
 
@@ -20,7 +21,7 @@ logger = setup_logger(__name__)
 class MSERPredictor:
     def __init__(self,
                  configs,
-                 model_path='models/EcapaTdnn_Fbank/best_model/',
+                 model_path='models/BiLSTM_Emotion2Vec/best_model/',
                  use_gpu=True):
         """
         声音分类预测工具
@@ -52,8 +53,10 @@ class MSERPredictor:
         if self.configs.model_conf.num_class is None:
             self.configs.model_conf.num_class = len(self.class_labels)
         # 获取模型
-        if self.configs.use_model == 'BidirectionalLSTM':
-            self.predictor = BidirectionalLSTM(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf)
+        if self.configs.use_model == 'BiLSTM':
+            self.predictor = BiLSTM(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf)
+        if self.configs.use_model == 'BaseModel':
+            self.predictor = BaseModel(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf)
         else:
             raise Exception(f'{self.configs.use_model} 模型不存在！')
         self.predictor.to(self.device)

@@ -24,7 +24,8 @@ from mser.data_utils.collate_fn import collate_fn
 from mser.data_utils.featurizer import AudioFeaturizer
 from mser.data_utils.reader import CustomDataset
 from mser.metric.metrics import accuracy
-from mser.models.bidirectional_lstm import BidirectionalLSTM
+from mser.models.bi_lstm import BiLSTM
+from mser.models.base_model import BaseModel
 from mser.utils.logger import setup_logger
 from mser.utils.scheduler import WarmupCosineSchedulerLR
 from mser.utils.utils import dict_to_object, plot_confusion_matrix, print_arguments
@@ -62,7 +63,10 @@ class MSERTrainer(object):
         self.class_labels = [l.replace('\n', '') for l in lines]
         if platform.system().lower() == 'windows':
             self.configs.dataset_conf.dataLoader.num_workers = 0
-            logger.warning('Windows系统不支持多线程读取数据，已自动关闭！')
+            logger.warning('Windows系统不支持多线程读取数据，已自动使用单线程读取！')
+        if self.configs.preprocess_conf.feature_method == 'Emotion2Vec':
+            self.configs.dataset_conf.dataLoader.num_workers = 0
+            logger.warning('Emotion2Vec特征提取方法不支持多线程，已自动使用单线程提取特征！')
         # 获取分类标签
         with open(self.configs.dataset_conf.label_list_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
@@ -116,7 +120,6 @@ class MSERTrainer(object):
         # 获取测试数据
         test_dataset = CustomDataset(data_list_path=self.configs.dataset_conf.train_list,
                                      audio_featurizer=audio_featurizer,
-                                     scaler_path=self.configs.dataset_conf.scaler_path,
                                      do_vad=self.configs.dataset_conf.do_vad,
                                      max_duration=self.configs.dataset_conf.eval_conf.max_duration,
                                      min_duration=self.configs.dataset_conf.min_duration,
@@ -132,14 +135,42 @@ class MSERTrainer(object):
         joblib.dump(scaler, self.configs.dataset_conf.scaler_path)
         logger.info(f'归一化文件保存在：{self.configs.dataset_conf.scaler_path}')
 
+    # 提取特征保存文件
+    def extract_features(self, save_dir='dataset/features'):
+        os.makedirs(save_dir, exist_ok=True)
+        audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
+                                           method_args=self.configs.preprocess_conf.get('method_args', {}))
+        for data_list in [self.configs.dataset_conf.train_list, self.configs.dataset_conf.test_list]:
+            # 获取测试数据
+            test_dataset = CustomDataset(data_list_path=data_list,
+                                         audio_featurizer=audio_featurizer,
+                                         do_vad=self.configs.dataset_conf.do_vad,
+                                         max_duration=self.configs.dataset_conf.eval_conf.max_duration,
+                                         min_duration=self.configs.dataset_conf.min_duration,
+                                         sample_rate=self.configs.dataset_conf.sample_rate,
+                                         use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
+                                         target_dB=self.configs.dataset_conf.target_dB,
+                                         mode='create_data')
+            save_data_list = data_list.replace('.txt', '_features.txt')
+            with open(save_data_list, 'w', encoding='utf-8') as f:
+                for i in tqdm(range(len(test_dataset))):
+                    feature, label = test_dataset[i]
+                    label = int(label)
+                    save_path = os.path.join(save_dir, f'{int(time.time()*1000)}.npy')
+                    np.save(save_path, feature)
+                    f.write(f'{save_path}\t{label}\n')
+            logger.info(f'{data_list}列表中的数据已提取特征完成，新列表为：{save_data_list}')
+
     # 获取模型
     def __setup_model(self, input_size, is_train=False):
         # 自动获取列表数量
         if self.configs.model_conf.num_class is None:
             self.configs.model_conf.num_class = len(self.class_labels)
         # 获取模型
-        if self.configs.use_model == 'BidirectionalLSTM':
-            self.model = BidirectionalLSTM(input_size=input_size, **self.configs.model_conf)
+        if self.configs.use_model == 'BiLSTM':
+            self.model = BiLSTM(input_size=input_size, **self.configs.model_conf)
+        elif self.configs.use_model == 'BaseModel':
+            self.model = BaseModel(input_size=input_size, **self.configs.model_conf)
         else:
             raise Exception(f'{self.configs.use_model} 模型不存在！')
         self.model.to(self.device)
@@ -463,7 +494,7 @@ class MSERTrainer(object):
         self.model.train()
         return loss, acc
 
-    def export(self, save_model_path='models/', resume_model='models/EcapaTdnn_Fbank/best_model/'):
+    def export(self, save_model_path='models/', resume_model='models/BiLSTM_Emotion2Vec/best_model/'):
         """
         导出预测模型
         :param save_model_path: 模型保存的路径

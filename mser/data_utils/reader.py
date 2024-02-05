@@ -62,32 +62,36 @@ class CustomDataset(Dataset):
             self.scaler = joblib.load(scaler_path)
 
     def __getitem__(self, idx):
-        # 分割音频路径和标签
-        audio_path, label = self.lines[idx].replace('\n', '').split('\t')
-        # 读取音频
-        audio_segment = AudioSegment.from_file(audio_path)
-        # 裁剪静音
-        if self.do_vad:
-            audio_segment.vad()
-        # 数据太短不利于训练
-        if self.mode == 'train':
-            if audio_segment.duration < self.min_duration:
-                return self.__getitem__(idx + 1 if idx < len(self.lines) - 1 else 0)
-        # 重采样
-        if audio_segment.sample_rate != self._target_sample_rate:
-            audio_segment.resample(self._target_sample_rate)
-        # 音频增强
-        if self.mode == 'train':
-            audio_segment = self.augment_audio(audio_segment, **self.aug_conf)
-        # decibel normalization
-        if self._use_dB_normalization:
-            audio_segment.normalize(target_db=self._target_dB)
-        if self.max_duration > audio_segment.duration:
-            diff_duration = (self.max_duration * audio_segment.sample_rate) - audio_segment.num_samples
-            audio_segment._samples = np.pad(audio_segment.samples, (0, diff_duration), 'wrap')
-        # 裁剪需要的数据
-        audio_segment.crop(duration=self.max_duration, mode=self.mode)
-        feature = self.audio_featurizer(audio_segment.samples, sample_rate=audio_segment.sample_rate)
+        # 分割数据文件路径和标签
+        data_path, label = self.lines[idx].replace('\n', '').split('\t')
+        # 如果后缀名为.npy的文件，那么直接读取
+        if data_path.endswith('.npy'):
+            feature = np.load(data_path)
+        else:
+            # 读取音频
+            audio_segment = AudioSegment.from_file(data_path)
+            # 裁剪静音
+            if self.do_vad:
+                audio_segment.vad()
+            # 数据太短不利于训练
+            if self.mode == 'train':
+                if audio_segment.duration < self.min_duration:
+                    return self.__getitem__(idx + 1 if idx < len(self.lines) - 1 else 0)
+            # 重采样
+            if audio_segment.sample_rate != self._target_sample_rate:
+                audio_segment.resample(self._target_sample_rate)
+            # 音频增强
+            if self.mode == 'train':
+                audio_segment = self.augment_audio(audio_segment, **self.aug_conf)
+            # decibel normalization
+            if self._use_dB_normalization:
+                audio_segment.normalize(target_db=self._target_dB)
+            if self.max_duration > audio_segment.duration:
+                diff_duration = (self.max_duration * audio_segment.sample_rate) - audio_segment.num_samples
+                audio_segment._samples = np.pad(audio_segment.samples, (0, diff_duration), 'wrap')
+            # 裁剪需要的数据
+            audio_segment.crop(duration=self.max_duration, mode=self.mode)
+            feature = self.audio_featurizer(audio_segment.samples, sample_rate=audio_segment.sample_rate)
         # 归一化
         if self.mode != 'create_data':
             # feature = feature - feature.mean()

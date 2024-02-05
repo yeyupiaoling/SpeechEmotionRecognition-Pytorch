@@ -1,6 +1,10 @@
 import librosa
 import numpy as np
 
+from mser.utils.logger import setup_logger
+
+logger = setup_logger(__name__)
+
 
 class AudioFeaturizer(object):
     """音频特征器
@@ -11,16 +15,35 @@ class AudioFeaturizer(object):
     :type method_args: dict
     """
 
-    def __init__(self, feature_method='MelSpectrogram', method_args={}):
+    def __init__(self, feature_method='Emotion2Vec', method_args={}):
         super().__init__()
         self._method_args = method_args
         self._feature_method = feature_method
+        self._feature_model = None
+        logger.info(f'使用的特征方法为 {self._feature_method}')
 
     def __call__(self, x, sample_rate: float) -> np.ndarray:
         if self._feature_method == 'CustomFeatures':
             return self.custom_features(x, sample_rate)
+        elif self._feature_method == 'Emotion2Vec':
+            return self.emotion2vec_features(x)
         else:
             raise Exception(f'预处理方法 {self._feature_method} 不存在!')
+
+    def emotion2vec_features(self, x) -> np.ndarray:
+        try:
+            from funasr import AutoModel
+        except ImportError:
+            logger.error('请先安装 funasr 库!')
+            raise ImportError('请先安装 funasr 库!')
+        if self._feature_model is None:
+            self._feature_model = AutoModel(model="iic/emotion2vec_base", model_revision="v2.0.4",
+                                            device='cuda',
+                                            disable_pbar=True,
+                                            disable_log=False)
+        res = self._feature_model.generate(input=[x], **self._method_args)
+        feats = res[0]["feats"]
+        return feats
 
     @staticmethod
     def custom_features(x, sample_rate: float) -> np.ndarray:
@@ -93,4 +116,9 @@ class AudioFeaturizer(object):
         :return: 特征大小
         :rtype: int
         """
-        return 312
+        if self._feature_method == 'CustomFeatures':
+            return 312
+        elif self._feature_method == 'Emotion2Vec':
+            return 768
+        else:
+            raise Exception(f'预处理方法 {self._feature_method} 不存在!')

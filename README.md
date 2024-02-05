@@ -19,9 +19,9 @@
 
 # 模型测试表
 
-|        模型         | Params(M) | 预处理方法 |   数据集   | 类别数量 | 准确率  |   获取模型   |
-|:-----------------:|:---------:|:-----:|:-------:|:----:|:----:|:--------:|
-| BidirectionalLSTM |    1.8    | Flank | RAVDESS |  8   | 0.78 | 加入知识星球获取 |
+|   模型   | Params(M) | 预处理方法 |   数据集   | 类别数量 | 准确率  |   获取模型   |
+|:------:|:---------:|:-----:|:-------:|:----:|:----:|:--------:|
+| BiLSTM |    1.8    | Flank | RAVDESS |  8   | 0.78 | 加入知识星球获取 |
 
 说明：
 1. RAVDESS数据集只使用`Audio_Speech_Actors_01-24.zip`
@@ -76,99 +76,139 @@ dataset/Audio_Speech_Actors_01-24/Actor_01/03-01-03-02-01-01-01.wav	2
 
 ## 训练
 
-接着就可以开始训练模型了，创建 `train.py`。配置文件里面的参数一般不需要修改，但是这几个是需要根据自己实际的数据集进行调整的，首先最重要的就是分类大小`dataset_conf.num_class`，这个每个数据集的分类大小可能不一样，根据自己的实际情况设定。然后是`dataset_conf.batch_size`，如果是显存不够的话，可以减小这个参数。
+训练有两个方法，第一个是提前提取特征，保持在本地，然后在进行训练，这种方法的好处就是训练特别快，因为本项目的特征提取方法比较慢，如果在训练中要提取特征，那么训练会很慢，缺点是没办法使用随机数据增强。第二种就是在训练过程中提取特征，这种好处是可以使用随机数据增强，缺点是训练比较慢。
+
+ - 提取特征（可选），执行`extract_features.py`程序即可，特征提取完成需要修改`configs/bi_lstm.yml`里面的`train_list`和`test_list`，将它们修改为新生成的数据列表路径。
+
+```shell
+python extract_features.py --configs=configs/bi_lstm.yml
+```
+
+输出日志：
+```
+·······
+100%████████████████████████████| 1290/1290 [01:39<00:00, 12.99it/s]
+[2024-02-03 14:57:00.699338 INFO   ] trainer:get_standard_file:136 - 归一化文件保存在：dataset/standard.m
+[2024-02-03 14:57:00.700046 INFO   ] featurizer:__init__:23 - 使用的特征方法为 Emotion2Vec
+100%|████████████████████████████| 1290/1290 [01:36<00:00, 13.40it/s]
+[2024-02-03 14:58:36.941253 INFO   ] trainer:extract_features:162 - dataset/train_list.txt列表中的数据已提取特征完成，新列表为：dataset/train_list_features.txt
+100%|██████████████████████████████| 150/150 [00:11<00:00, 13.52it/s]
+[2024-02-03 14:58:48.036661 INFO   ] trainer:extract_features:162 - dataset/test_list.txt列表中的数据已提取特征完成，新列表为：dataset/test_list_features.txt
+```
+
+不管是否提前提取特征，接着都可以开始训练模型了，创建 `train.py`。配置文件里面的参数一般不需要修改，但是这几个是需要根据自己实际的数据集进行调整的，首先最重要的就是分类大小`dataset_conf.num_class`，这个每个数据集的分类大小可能不一样，根据自己的实际情况设定。然后是`dataset_conf.batch_size`，如果是显存不够的话，可以减小这个参数。
 
 ```shell
 # 单卡训练
-CUDA_VISIBLE_DEVICES=0 python train.py
+CUDA_VISIBLE_DEVICES=0 python train.py --configs=configs/bi_lstm.yml
 # 多卡训练
-CUDA_VISIBLE_DEVICES=0,1 torchrun --standalone --nnodes=1 --nproc_per_node=2 train.py
+CUDA_VISIBLE_DEVICES=0,1 torchrun --standalone --nnodes=1 --nproc_per_node=2 train.py --configs=configs/bi_lstm.yml
 ```
 
 
 训练输出日志：
-```[2023-08-18 18:48:49.662963 INFO   ] utils:print_arguments:14 - ----------- 额外配置参数 -----------
-[2023-08-18 18:48:49.662963 INFO   ] utils:print_arguments:16 - configs: configs/bi_lstm.yml
-[2023-08-18 18:48:49.662963 INFO   ] utils:print_arguments:16 - local_rank: 0
-[2023-08-18 18:48:49.662963 INFO   ] utils:print_arguments:16 - pretrained_model: None
-[2023-08-18 18:48:49.662963 INFO   ] utils:print_arguments:16 - resume_model: None
-[2023-08-18 18:48:49.662963 INFO   ] utils:print_arguments:16 - save_model_path: models/
-[2023-08-18 18:48:49.662963 INFO   ] utils:print_arguments:16 - use_gpu: True
-[2023-08-18 18:48:49.662963 INFO   ] utils:print_arguments:17 - ------------------------------------------------
-[2023-08-18 18:48:49.680176 INFO   ] utils:print_arguments:19 - ----------- 配置文件参数 -----------
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:22 - dataset_conf:
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:25 - 	aug_conf:
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:27 - 		noise_aug_prob: 0.2
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:27 - 		noise_dir: dataset/noise
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:27 - 		speed_perturb: True
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:27 - 		volume_aug_prob: 0.2
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:27 - 		volume_perturb: False
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:25 - 	dataLoader:
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:27 - 		batch_size: 32
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:27 - 		num_workers: 4
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:29 - 	do_vad: False
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:25 - 	eval_conf:
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:27 - 		batch_size: 1
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:27 - 		max_duration: 3
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:29 - 	label_list_path: dataset/label_list.txt
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:29 - 	max_duration: 3
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:29 - 	min_duration: 0.5
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:29 - 	sample_rate: 16000
-[2023-08-18 18:48:49.681177 INFO   ] utils:print_arguments:29 - 	scaler_path: dataset/standard.m
-[2023-08-18 18:48:49.682177 INFO   ] utils:print_arguments:29 - 	target_dB: -20
-[2023-08-18 18:48:49.682177 INFO   ] utils:print_arguments:29 - 	test_list: dataset/test_list.txt
-[2023-08-18 18:48:49.682177 INFO   ] utils:print_arguments:29 - 	train_list: dataset/train_list.txt
-[2023-08-18 18:48:49.682177 INFO   ] utils:print_arguments:29 - 	use_dB_normalization: True
-[2023-08-18 18:48:49.682177 INFO   ] utils:print_arguments:22 - model_conf:
-[2023-08-18 18:48:49.682177 INFO   ] utils:print_arguments:29 - 	num_class: None
-[2023-08-18 18:48:49.682177 INFO   ] utils:print_arguments:22 - optimizer_conf:
-[2023-08-18 18:48:49.682177 INFO   ] utils:print_arguments:29 - 	learning_rate: 0.001
-[2023-08-18 18:48:49.682177 INFO   ] utils:print_arguments:29 - 	optimizer: Adam
-[2023-08-18 18:48:49.683184 INFO   ] utils:print_arguments:29 - 	scheduler: WarmupCosineSchedulerLR
-[2023-08-18 18:48:49.683184 INFO   ] utils:print_arguments:25 - 	scheduler_args:
-[2023-08-18 18:48:49.683184 INFO   ] utils:print_arguments:27 - 		max_lr: 0.001
-[2023-08-18 18:48:49.683184 INFO   ] utils:print_arguments:27 - 		min_lr: 1e-05
-[2023-08-18 18:48:49.683184 INFO   ] utils:print_arguments:27 - 		warmup_epoch: 5
-[2023-08-18 18:48:49.683184 INFO   ] utils:print_arguments:29 - 	weight_decay: 1e-06
-[2023-08-18 18:48:49.683184 INFO   ] utils:print_arguments:22 - preprocess_conf:
-[2023-08-18 18:48:49.683184 INFO   ] utils:print_arguments:29 - 	feature_method: CustomFeatures
-[2023-08-18 18:48:49.683184 INFO   ] utils:print_arguments:22 - train_conf:
-[2023-08-18 18:48:49.683184 INFO   ] utils:print_arguments:29 - 	enable_amp: False
-[2023-08-18 18:48:49.683184 INFO   ] utils:print_arguments:29 - 	log_interval: 10
-[2023-08-18 18:48:49.683184 INFO   ] utils:print_arguments:29 - 	max_epoch: 60
-[2023-08-18 18:48:49.683184 INFO   ] utils:print_arguments:29 - 	use_compile: False
-[2023-08-18 18:48:49.683184 INFO   ] utils:print_arguments:31 - use_model: BidirectionalLSTM
-[2023-08-18 18:48:49.683184 INFO   ] utils:print_arguments:32 - ------------------------------------------------
-[2023-08-18 18:48:49.683184 WARNING] trainer:__init__:66 - Windows系统不支持多线程读取数据，已自动关闭！
+```
+[2024-02-03 15:09:26.166181 INFO   ] utils:print_arguments:14 - ----------- 额外配置参数 -----------
+[2024-02-03 15:09:26.166281 INFO   ] utils:print_arguments:16 - configs: configs/bi_lstm.yml
+[2024-02-03 15:09:26.166358 INFO   ] utils:print_arguments:16 - local_rank: 0
+[2024-02-03 15:09:26.166427 INFO   ] utils:print_arguments:16 - pretrained_model: None
+[2024-02-03 15:09:26.166494 INFO   ] utils:print_arguments:16 - resume_model: None
+[2024-02-03 15:09:26.166550 INFO   ] utils:print_arguments:16 - save_model_path: models/
+[2024-02-03 15:09:26.166613 INFO   ] utils:print_arguments:16 - use_gpu: True
+[2024-02-03 15:09:26.166676 INFO   ] utils:print_arguments:17 - ------------------------------------------------
+[2024-02-03 15:09:26.176508 INFO   ] utils:print_arguments:19 - ----------- 配置文件参数 -----------
+[2024-02-03 15:09:26.176604 INFO   ] utils:print_arguments:22 - dataset_conf:
+[2024-02-03 15:09:26.176673 INFO   ] utils:print_arguments:25 -         aug_conf:
+[2024-02-03 15:09:26.176736 INFO   ] utils:print_arguments:27 -                 noise_aug_prob: 0.2
+[2024-02-03 15:09:26.176792 INFO   ] utils:print_arguments:27 -                 noise_dir: dataset/noise
+[2024-02-03 15:09:26.176861 INFO   ] utils:print_arguments:27 -                 speed_perturb: True
+[2024-02-03 15:09:26.176914 INFO   ] utils:print_arguments:27 -                 volume_aug_prob: 0.2
+[2024-02-03 15:09:26.176966 INFO   ] utils:print_arguments:27 -                 volume_perturb: False
+[2024-02-03 15:09:26.177017 INFO   ] utils:print_arguments:25 -         dataLoader:
+[2024-02-03 15:09:26.177070 INFO   ] utils:print_arguments:27 -                 batch_size: 32
+[2024-02-03 15:09:26.177151 INFO   ] utils:print_arguments:27 -                 num_workers: 4
+[2024-02-03 15:09:26.177224 INFO   ] utils:print_arguments:29 -         do_vad: False
+[2024-02-03 15:09:26.177275 INFO   ] utils:print_arguments:25 -         eval_conf:
+[2024-02-03 15:09:26.177328 INFO   ] utils:print_arguments:27 -                 batch_size: 1
+[2024-02-03 15:09:26.177387 INFO   ] utils:print_arguments:27 -                 max_duration: 3
+[2024-02-03 15:09:26.177438 INFO   ] utils:print_arguments:29 -         label_list_path: dataset/label_list.txt
+[2024-02-03 15:09:26.177489 INFO   ] utils:print_arguments:29 -         max_duration: 3
+[2024-02-03 15:09:26.177542 INFO   ] utils:print_arguments:29 -         min_duration: 0.5
+[2024-02-03 15:09:26.177593 INFO   ] utils:print_arguments:29 -         sample_rate: 16000
+[2024-02-03 15:09:26.177647 INFO   ] utils:print_arguments:29 -         scaler_path: dataset/standard.m
+[2024-02-03 15:09:26.177699 INFO   ] utils:print_arguments:29 -         target_dB: -20
+[2024-02-03 15:09:26.177749 INFO   ] utils:print_arguments:29 -         test_list: dataset/test_list.txt
+[2024-02-03 15:09:26.177800 INFO   ] utils:print_arguments:29 -         train_list: dataset/train_list.txt
+[2024-02-03 15:09:26.177851 INFO   ] utils:print_arguments:29 -         use_dB_normalization: False
+[2024-02-03 15:09:26.177905 INFO   ] utils:print_arguments:22 - model_conf:
+[2024-02-03 15:09:26.177959 INFO   ] utils:print_arguments:29 -         num_class: None
+[2024-02-03 15:09:26.178011 INFO   ] utils:print_arguments:22 - optimizer_conf:
+[2024-02-03 15:09:26.178066 INFO   ] utils:print_arguments:29 -         learning_rate: 0.001
+[2024-02-03 15:09:26.178118 INFO   ] utils:print_arguments:29 -         optimizer: Adam
+[2024-02-03 15:09:26.178173 INFO   ] utils:print_arguments:29 -         scheduler: WarmupCosineSchedulerLR
+[2024-02-03 15:09:26.178224 INFO   ] utils:print_arguments:25 -         scheduler_args:
+[2024-02-03 15:09:26.178277 INFO   ] utils:print_arguments:27 -                 max_lr: 0.001
+[2024-02-03 15:09:26.178330 INFO   ] utils:print_arguments:27 -                 min_lr: 1e-05
+[2024-02-03 15:09:26.178381 INFO   ] utils:print_arguments:27 -                 warmup_epoch: 5
+[2024-02-03 15:09:26.178434 INFO   ] utils:print_arguments:29 -         weight_decay: 1e-06
+[2024-02-03 15:09:26.178485 INFO   ] utils:print_arguments:22 - preprocess_conf:
+[2024-02-03 15:09:26.178537 INFO   ] utils:print_arguments:29 -         feature_method: Emotion2Vec
+[2024-02-03 15:09:26.178588 INFO   ] utils:print_arguments:25 -         method_args:
+[2024-02-03 15:09:26.178644 INFO   ] utils:print_arguments:27 -                 granularity: utterance
+[2024-02-03 15:09:26.178695 INFO   ] utils:print_arguments:22 - train_conf:
+[2024-02-03 15:09:26.178748 INFO   ] utils:print_arguments:29 -         enable_amp: False
+[2024-02-03 15:09:26.178800 INFO   ] utils:print_arguments:29 -         log_interval: 10
+[2024-02-03 15:09:26.178852 INFO   ] utils:print_arguments:29 -         loss_weight: None
+[2024-02-03 15:09:26.178906 INFO   ] utils:print_arguments:29 -         max_epoch: 60
+[2024-02-03 15:09:26.178957 INFO   ] utils:print_arguments:29 -         use_compile: False
+[2024-02-03 15:09:26.179008 INFO   ] utils:print_arguments:31 - use_model: BiLSTM
+[2024-02-03 15:09:26.179059 INFO   ] utils:print_arguments:32 - ------------------------------------------------
+[2024-02-03 15:09:26.179184 WARNING] trainer:__init__:69 - Emotion2Vec特征提取方法不支持多线程，已自动使用单线程提取特征！
+[2024-02-03 15:09:26.198994 INFO   ] featurizer:__init__:23 - 使用的特征方法为 Emotion2Vec
 ==========================================================================================
 Layer (type:depth-idx)                   Output Shape              Param #
 ==========================================================================================
-BidirectionalLSTM                        [1, 6]                    --
-├─Linear: 1-1                            [1, 512]                  160,256
+BiLSTM                                   [1, 8]                    --
+├─Linear: 1-1                            [1, 512]                  393,728
 ├─LSTM: 1-2                              [1, 1, 512]               1,576,960
 ├─Tanh: 1-3                              [1, 512]                  --
 ├─Dropout: 1-4                           [1, 512]                  --
 ├─Linear: 1-5                            [1, 256]                  131,328
 ├─ReLU: 1-6                              [1, 256]                  --
-├─Linear: 1-7                            [1, 6]                    1,542
+├─Linear: 1-7                            [1, 8]                    2,056
 ==========================================================================================
-Total params: 1,870,086
-Trainable params: 1,870,086
+Total params: 2,104,072
+Trainable params: 2,104,072
 Non-trainable params: 0
-Total mult-adds (M): 1.87
+Total mult-adds (Units.MEGABYTES): 2.10
 ==========================================================================================
 Input size (MB): 0.00
 Forward/backward pass size (MB): 0.01
-Params size (MB): 7.48
-Estimated Total Size (MB): 7.49
+Params size (MB): 8.42
+Estimated Total Size (MB): 8.43
 ==========================================================================================
-[2023-08-18 18:48:51.425936 INFO   ] trainer:train:378 - 训练数据：4407
-[2023-08-18 18:48:53.526136 INFO   ] trainer:__train_epoch:331 - Train epoch: [1/60], batch: [0/138], loss: 1.80256, accuracy: 0.15625, learning rate: 0.00001000, speed: 15.24 data/sec, eta: 4:49:49
+[2024-02-05 15:09:31.551738 INFO   ] trainer:train:378 - 训练数据：4407
+[2024-02-05 15:09:32.951738 INFO   ] trainer:__train_epoch:362 - Train epoch: [1/60], batch: [0/41], loss: 2.07688, accuracy: 0.15625, learning rate: 0.00001000, speed: 5.35 data/sec, eta: 4:05:18
+[2024-02-05 15:09:56.525906 INFO   ] trainer:__train_epoch:362 - Train epoch: [1/60], batch: [10/41], loss: 2.05963, accuracy: 0.22187, learning rate: 0.00005829, speed: 13.57 data/sec, eta: 1:36:15
 ····················
 ```
 
 # 评估
-每轮训练结束可以执行评估，评估会出来输出准确率，还保存了混合矩阵图片，保存路径`output/images/`，如下。
+
+执行下面命令执行评估。
+
+```shell
+python eval.py --configs=configs/bi_lstm.yml
+```
+
+评估会出来输出准确率，还保存了混合矩阵图片，保存路径`output/images/`，如下。
+
+```shell
+[2024-02-03 15:13:25.469242 INFO   ] trainer:evaluate:461 - 成功加载模型：models/BiLSTM_Emotion2Vec/best_model/model.pth
+100%|██████████████████████████████| 150/150 [00:00<00:00, 1281.96it/s]
+评估消耗时间：1s，loss：0.61840，accuracy：0.87333
+```
+
 <br/>
 <div align="center">
 <img src="docs/images/image1.png" alt="打赏作者" width="600">

@@ -1,3 +1,3 @@
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 # 项目支持的模型
-SUPPORT_MODEL = ['BidirectionalLSTM']
+SUPPORT_MODEL = ['BiLSTM', 'BaseModel']
