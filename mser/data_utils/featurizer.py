@@ -37,6 +37,8 @@ class AudioFeaturizer(object):
             logger.error('请先安装 funasr 库!')
             raise ImportError('请先安装 funasr 库!')
         if self._feature_model is None:
+            if 'granularity' not in self._method_args.keys():
+                self._method_args['granularity'] = 'utterance'
             self._feature_model = AutoModel(model="iic/emotion2vec_base", model_revision="v2.0.4",
                                             device='cuda',
                                             disable_pbar=True,

@@ -25,9 +25,14 @@
 |  BiLSTM   |   1.87    | CustomFeature | RAVDESS |  8   | 0.68666 | 加入知识星球获取 |
 | BaseModel |   0.19    |  Emotion2Vec  | RAVDESS |  8   | 0.85333 | 加入知识星球获取 |
 | BaseModel |   0.08    | CustomFeature | RAVDESS |  8   | 0.68000 | 加入知识星球获取 |
+|  BiLSTM   |   2.10    |  Emotion2Vec  |  更大数据集  |  9   | 0.91826 | 加入知识星球获取 |
+|  BiLSTM   |   2.10    | CustomFeature |  更大数据集  |  9   | 0.90817 | 加入知识星球获取 |
+| BaseModel |   0.19    |  Emotion2Vec  |  更大数据集  |  9   | 0.92870 | 加入知识星球获取 |
+| BaseModel |   0.19    | CustomFeature |  更大数据集  |  9   | 0.91026 | 加入知识星球获取 |
 
 说明：
 1. RAVDESS数据集只使用`Audio_Speech_Actors_01-24.zip`
+2. 更大数据集数据集有近2.5万条数据，知识星球也提供了该数据集的特征数据。
 
 ## 安装环境
 
