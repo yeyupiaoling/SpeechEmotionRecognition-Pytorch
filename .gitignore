@@ -7,4 +7,4 @@ dataset/
 log/
 output/
 models/
-test.py
+test*.py
