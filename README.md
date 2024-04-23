@@ -38,7 +38,7 @@
 
  - 首先安装的是Pytorch的GPU版本，如果已经安装过了，请跳过。
 ```shell
-conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.6 -c pytorch -c nvidia
+conda install pytorch==2.2.1 torchvision==0.17.1 torchaudio==2.2.1 pytorch-cuda=11.8 -c pytorch -c nvidia
 ```
 
  - 安装mser库。
