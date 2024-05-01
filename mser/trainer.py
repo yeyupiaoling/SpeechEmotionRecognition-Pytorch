@@ -139,7 +139,6 @@ class MSERTrainer(object):
 
     # 提取特征保存文件
     def extract_features(self, save_dir='dataset/features'):
-        os.makedirs(save_dir, exist_ok=True)
         audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                            method_args=self.configs.preprocess_conf.get('method_args', {}))
         for i, data_list in enumerate([self.configs.dataset_conf.train_list, self.configs.dataset_conf.test_list]):
@@ -159,7 +158,8 @@ class MSERTrainer(object):
                 for i in tqdm(range(len(test_dataset))):
                     feature, label = test_dataset[i]
                     label = int(label)
-                    save_path = os.path.join(save_dir, f'{int(time.time() * 1000)}.npy')
+                    save_path = os.path.join(save_dir, str(label), f'{int(time.time() * 1000)}.npy')
+                    os.makedirs(os.path.dirname(save_path), exist_ok=True)
                     np.save(save_path, feature)
                     f.write(f'{save_path}\t{label}\n')
             logger.info(f'{data_list}列表中的数据已提取特征完成，新列表为：{save_data_list}')
