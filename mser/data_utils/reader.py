@@ -43,6 +43,7 @@ class CustomDataset(Dataset):
             target_dB: 音量归一化的大小
         """
         super(CustomDataset, self).__init__()
+        assert mode in ['train', 'eval', 'create_data', 'extract_feature']
         self.do_vad = do_vad
         self.max_duration = max_duration
         self.min_duration = min_duration
@@ -87,11 +88,11 @@ class CustomDataset(Dataset):
             if self._use_dB_normalization:
                 audio_segment.normalize(target_db=self._target_dB)
             # 裁剪需要的数据
-            if audio_segment.duration > self.max_duration:
+            if self.mode != 'extract_feature' and audio_segment.duration > self.max_duration:
                 audio_segment.crop(duration=self.max_duration, mode=self.mode)
             feature = self.audio_featurizer(audio_segment.samples, sample_rate=audio_segment.sample_rate)
         # 归一化
-        if self.mode != 'create_data':
+        if self.mode != 'create_data' and self.mode != 'extract_feature':
             # feature = feature - feature.mean()
             feature = self.scaler.transform([feature])
             feature = feature.squeeze().astype(np.float32)
