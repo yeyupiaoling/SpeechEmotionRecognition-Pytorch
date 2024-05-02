@@ -82,6 +82,19 @@ dataset/Audio_Speech_Actors_01-24/Actor_01/03-01-03-02-01-01-01.wav	2
 **注意：** `create_data.py`里面的`create_standard('configs/bi_lstm.yml')`函数必须要执行的，这个是生成归一化的文件。
 
 
+# 提取特征（可选）
+
+在训练过程中，首先是要读取音频数据，然后提取特征，最后再进行训练。其中读取音频数据、提取特征也是比较消耗时间的，所以我们可以选择提前提取好取特征，训练模型的是就可以直接加载提取好的特征，这样训练速度会更快。这个提取特征是可选择，如果没有提取好的特征，训练模型的时候就会从读取音频数据，然后提取特征开始。提取特征步骤如下：
+
+1. 执行`extract_features.py`，提取特征，特征会保存在`dataset/features`目录下，并生成新的数据列表`train_list_features.txt`和`test_list_features.txt`。
+
+```shell
+python extract_features.py --configs=configs/bi_lstm.yml --save_dir=dataset/features
+```
+
+2. 修改配置文件，将`dataset_conf.train_list`和`dataset_conf.test_list`修改为`train_list_features.txt`和`test_list_features.txt`。
+
+
 ## 训练
 
 训练有两个方法，第一个是提前提取特征，保持在本地，然后在进行训练，这种方法的好处就是训练特别快，因为本项目的特征提取方法比较慢，如果在训练中要提取特征，那么训练会很慢，缺点是没办法使用随机数据增强。第二种就是在训练过程中提取特征，这种好处是可以使用随机数据增强，缺点是训练比较慢。
