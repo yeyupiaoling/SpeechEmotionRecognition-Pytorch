@@ -42,7 +42,7 @@ class AudioFeaturizer(object):
             self._feature_model = AutoModel(model="iic/emotion2vec_base", model_revision="v2.0.4",
                                             device='cuda',
                                             disable_pbar=True,
-                                            disable_log=False)
+                                            disable_log=True)
         res = self._feature_model.generate(input=[x], **self._method_args)
         feats = res[0]["feats"]
         return feats
