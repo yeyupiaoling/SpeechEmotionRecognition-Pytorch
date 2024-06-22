@@ -1,3 +1,6 @@
+import os
+import shutil
+
 import librosa
 import numpy as np
 
@@ -33,13 +36,18 @@ class AudioFeaturizer(object):
     def emotion2vec_features(self, x) -> np.ndarray:
         try:
             from funasr import AutoModel
+            from modelscope import snapshot_download
         except ImportError:
             logger.error('请先安装 funasr 库!')
             raise ImportError('请先安装 funasr 库!')
         if self._feature_model is None:
             if 'granularity' not in self._method_args.keys():
                 self._method_args['granularity'] = 'utterance'
-            self._feature_model = AutoModel(model="iic/emotion2vec_base", model_revision="v2.0.4",
+            emotion2vec_model_dir = 'models/emotion2vec_base/'
+            if not os.path.exists(emotion2vec_model_dir):
+                model_dir = snapshot_download('iic/emotion2vec_base', revision="v2.0.4")
+                shutil.copytree(model_dir, emotion2vec_model_dir)
+            self._feature_model = AutoModel(model=emotion2vec_model_dir,
                                             device='cuda',
                                             disable_pbar=True,
                                             disable_log=True)
