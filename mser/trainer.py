@@ -75,6 +75,10 @@ class MSERTrainer(object):
         self.stop_train, self.stop_eval = False, False
 
     def __setup_dataloader(self, is_train=False):
+        """ 获取数据加载器
+
+        :param is_train: 是否获取训练数据
+        """
         self.audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                                 method_args=self.configs.preprocess_conf.get('method_args', {}))
         if is_train:
@@ -137,11 +141,14 @@ class MSERTrainer(object):
         joblib.dump(scaler, self.configs.dataset_conf.scaler_path)
         logger.info(f'归一化文件保存在：{self.configs.dataset_conf.scaler_path}')
 
-    # 提取特征保存文件
     def extract_features(self, save_dir='dataset/features'):
+        """ 提取特征保存文件
+
+        :param save_dir: 保存路径
+        """
         audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                            method_args=self.configs.preprocess_conf.get('method_args', {}))
-        for i, data_list in enumerate([self.configs.dataset_conf.train_list, self.configs.dataset_conf.test_list]):
+        for j, data_list in enumerate([self.configs.dataset_conf.train_list, self.configs.dataset_conf.test_list]):
             # 获取测试数据
             test_dataset = CustomDataset(data_list_path=data_list,
                                          audio_featurizer=audio_featurizer,
@@ -151,6 +158,10 @@ class MSERTrainer(object):
                                          target_dB=self.configs.dataset_conf.target_dB,
                                          mode='extract_feature')
             save_data_list = data_list.replace('.txt', '_features.txt')
+            if j == 0:
+                self.configs.dataset_conf.train_list = save_data_list
+            elif j == 1:
+                self.configs.dataset_conf.test_list = save_data_list
             with open(save_data_list, 'w', encoding='utf-8') as f:
                 for i in tqdm(range(len(test_dataset))):
                     feature, label = test_dataset[i]
@@ -163,6 +174,11 @@ class MSERTrainer(object):
 
     # 获取模型
     def __setup_model(self, input_size, is_train=False):
+        """ 获取模型
+
+        :param input_size: 模型输入特征大小
+        :param is_train: 是否获取训练模型
+        """
         # 自动获取列表数量
         if self.configs.model_conf.num_class is None:
             self.configs.model_conf.num_class = len(self.class_labels)
@@ -220,6 +236,10 @@ class MSERTrainer(object):
                 raise Exception(f'不支持学习率衰减函数：{self.configs.optimizer_conf.scheduler}')
 
     def __load_pretrained(self, pretrained_model):
+        """加载预训练模型
+
+        :param pretrained_model: 预训练模型路径
+        """
         # 加载预训练模型
         if pretrained_model is not None:
             if os.path.isdir(pretrained_model):
@@ -246,37 +266,60 @@ class MSERTrainer(object):
             logger.info('成功加载预训练模型：{}'.format(pretrained_model))
 
     def __load_checkpoint(self, save_model_path, resume_model):
-        last_epoch = -1
-        best_acc = 0
+        """加载模型
+
+        :param save_model_path: 模型保存路径
+        :param resume_model: 恢复训练的模型路径
+        """
+        last_epoch1 = -1
+        best_acc1 = 0
+
+        def load_model(model_path):
+            assert os.path.exists(os.path.join(model_path, 'model.pth')), "模型参数文件不存在！"
+            assert os.path.exists(os.path.join(model_path, 'optimizer.pth')), "优化方法参数文件不存在！"
+            state_dict = torch.load(os.path.join(model_path, 'model.pth'))
+            if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
+                self.model.module.load_state_dict(state_dict)
+            else:
+                self.model.load_state_dict(state_dict)
+            self.optimizer.load_state_dict(torch.load(os.path.join(model_path, 'optimizer.pth')))
+            # 自动混合精度参数
+            if self.amp_scaler is not None and os.path.exists(os.path.join(model_path, 'scaler.pth')):
+                self.amp_scaler.load_state_dict(torch.load(os.path.join(model_path, 'scaler.pth')))
+            with open(os.path.join(model_path, 'model.state'), 'r', encoding='utf-8') as f:
+                json_data = json.load(f)
+                last_epoch = json_data['last_epoch'] - 1
+                best_acc = json_data['accuracy']
+            logger.info('成功恢复模型参数和优化方法参数：{}'.format(model_path))
+            self.optimizer.step()
+            [self.scheduler.step() for _ in range(last_epoch * len(self.train_loader))]
+            return last_epoch, best_acc
+
+        # 获取最后一个保存的模型
         last_model_dir = os.path.join(save_model_path,
                                       f'{self.configs.use_model}_{self.configs.preprocess_conf.feature_method}',
                                       'last_model')
         if resume_model is not None or (os.path.exists(os.path.join(last_model_dir, 'model.pth'))
                                         and os.path.exists(os.path.join(last_model_dir, 'optimizer.pth'))):
-            # 自动获取最新保存的模型
-            if resume_model is None: resume_model = last_model_dir
-            assert os.path.exists(os.path.join(resume_model, 'model.pth')), "模型参数文件不存在！"
-            assert os.path.exists(os.path.join(resume_model, 'optimizer.pth')), "优化方法参数文件不存在！"
-            state_dict = torch.load(os.path.join(resume_model, 'model.pth'))
-            if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
-                self.model.module.load_state_dict(state_dict)
+            if resume_model is not None:
+                last_epoch1, best_acc1 = load_model(resume_model)
             else:
-                self.model.load_state_dict(state_dict)
-            self.optimizer.load_state_dict(torch.load(os.path.join(resume_model, 'optimizer.pth')))
-            # 自动混合精度参数
-            if self.amp_scaler is not None and os.path.exists(os.path.join(resume_model, 'scaler.pth')):
-                self.amp_scaler.load_state_dict(torch.load(os.path.join(resume_model, 'scaler.pth')))
-            with open(os.path.join(resume_model, 'model.state'), 'r', encoding='utf-8') as f:
-                json_data = json.load(f)
-                last_epoch = json_data['last_epoch'] - 1
-                best_acc = json_data['accuracy']
-            self.optimizer.step()
-            [self.scheduler.step() for _ in range(last_epoch * len(self.train_loader))]
-            logger.info('成功恢复模型参数和优化方法参数：{}'.format(resume_model))
-        return last_epoch, best_acc
+                try:
+                    # 自动获取最新保存的模型
+                    last_epoch1, best_acc1 = load_model(last_model_dir)
+                except Exception as e:
+                    logger.warning(f'尝试自动恢复最新模型失败，错误信息：{e}')
+        return last_epoch1, best_acc1
 
     # 保存模型
     def __save_checkpoint(self, save_model_path, epoch_id, best_acc=0., best_model=False):
+        """保存模型
+
+        :param save_model_path: 模型保存路径
+        :param epoch_id: 当前epoch
+        :param best_acc: 最好的准确率
+        :param best_model: 是否为最佳模型
+        """
         if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
             state_dict = self.model.module.state_dict()
         else:
@@ -313,6 +356,13 @@ class MSERTrainer(object):
         logger.info('已保存模型：{}'.format(model_path))
 
     def __train_epoch(self, epoch_id, local_rank, writer, nranks=0):
+        """训练一个epoch
+
+        :param epoch_id: 当前epoch
+        :param local_rank: 当前显卡id
+        :param writer: VisualDL对象
+        :param nranks: 所使用显卡的数量
+        """
         train_times, accuracies, loss_sum = [], [], []
         start = time.time()
         for batch_id, (features, label, input_lens_ratio) in enumerate(self.train_loader):
