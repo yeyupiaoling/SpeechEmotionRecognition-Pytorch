@@ -273,12 +273,6 @@ shutil.rmtree(f'{user_dir}/.cache/matplotlib', ignore_errors=True)
 ```
 
 
-<br/>
-<div align="center">
-<img src="docs/images/image1.png" alt="打赏作者" width="600">
-</div>
-
-
 # 预测
 
 在训练结束之后，我们得到了一个模型参数文件，我们使用这个模型预测音频。
