@@ -34,25 +34,10 @@ class AudioFeaturizer(object):
             raise Exception(f'预处理方法 {self._feature_method} 不存在!')
 
     def emotion2vec_features(self, x) -> np.ndarray:
-        try:
-            from funasr import AutoModel
-            from modelscope import snapshot_download
-        except ImportError:
-            logger.error('请先安装 funasr 库!')
-            raise ImportError('请先安装 funasr 库!')
+        from mser.utils.emotion2vec_predict import Emotion2vecPredict
         if self._feature_model is None:
-            if 'granularity' not in self._method_args.keys():
-                self._method_args['granularity'] = 'utterance'
-            emotion2vec_model_dir = 'models/emotion2vec_base/'
-            if not os.path.exists(emotion2vec_model_dir):
-                model_dir = snapshot_download('iic/emotion2vec_base', revision="v2.0.4")
-                shutil.copytree(model_dir, emotion2vec_model_dir)
-            self._feature_model = AutoModel(model=emotion2vec_model_dir,
-                                            device='cuda',
-                                            disable_pbar=True,
-                                            disable_log=True)
-        res = self._feature_model.generate(input=[x], **self._method_args)
-        feats = res[0]["feats"]
+            self._feature_model = Emotion2vecPredict('iic/emotion2vec_base', revision="v2.0.4", use_gpu=True)
+        feats = self._feature_model.extract_features(x, self._method_args)
         return feats
 
     @staticmethod

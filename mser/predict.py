@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import yaml
 
-from mser import SUPPORT_MODEL
+from mser import SUPPORT_MODEL, SUPPORT_EMOTION2VEC_MODEL
 from mser.data_utils.audio import AudioSegment
 from mser.data_utils.featurizer import AudioFeaturizer
 from mser.models.bi_lstm import BiLSTM
@@ -21,11 +21,13 @@ logger = setup_logger(__name__)
 class MSERPredictor:
     def __init__(self,
                  configs,
+                 use_ms_model=None,
                  model_path='models/BiLSTM_Emotion2Vec/best_model/',
                  use_gpu=True):
         """
         声音分类预测工具
         :param configs: 配置参数
+        :param use_ms_model: 使用ModelScope上公开Emotion2vec的模型
         :param model_path: 导出的预测模型文件夹路径
         :param use_gpu: 是否使用GPU预测
         """
@@ -35,6 +37,14 @@ class MSERPredictor:
         else:
             os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
             self.device = torch.device("cpu")
+        self.use_ms_model = use_ms_model
+        # 使用ModelScope上的模型
+        if use_ms_model is not None:
+            # 支持的模型
+            assert use_ms_model in SUPPORT_EMOTION2VEC_MODEL, f'没有该模型：{use_ms_model}'
+            from mser.utils.emotion2vec_predict import Emotion2vecPredict
+            self.predictor = Emotion2vecPredict(use_ms_model, revision=None, use_gpu=use_gpu)
+            return
         # 读取配置文件
         if isinstance(configs, str):
             with open(configs, 'r', encoding='utf-8') as f:
@@ -116,6 +126,9 @@ class MSERPredictor:
         :param sample_rate: 如果传入的事numpy数据，需要指定采样率
         :return: 结果标签和对应的得分
         """
+        if self.use_ms_model is not None:
+            labels, scores = self.predictor.predict(audio_data)
+            return labels[0], scores[0]
         # 加载音频文件，并进行预处理
         input_data = self._load_audio(audio_data=audio_data, sample_rate=sample_rate)
         input_data = torch.tensor(input_data, dtype=torch.float32, device=self.device).unsqueeze(0)
@@ -135,6 +148,9 @@ class MSERPredictor:
         :param sample_rate: 如果传入的事numpy数据，需要指定采样率
         :return: 结果标签和对应的得分
         """
+        if self.use_ms_model is not None:
+            labels, scores = self.predictor.predict(audios_data)
+            return labels, scores
         audios_data1 = []
         for audio_data in audios_data:
             # 加载音频文件，并进行预处理

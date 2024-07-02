@@ -7,4 +7,5 @@ dataset/
 log/
 output/
 models/
+!dataset/test.wav
 test*.py
