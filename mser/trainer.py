@@ -128,9 +128,14 @@ class MSERTrainer(object):
 
     # 提取特征保存文件
     def extract_features(self, save_dir='dataset/features', max_duration=100):
+        """ 提取特征保存文件
+
+        :param save_dir: 保存路径
+        :param max_duration: 最大时间
+        """
         self.audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                                 method_args=self.configs.preprocess_conf.get('method_args', {}))
-        for i, data_list in enumerate([self.configs.dataset_conf.train_list, self.configs.dataset_conf.test_list]):
+        for j, data_list in enumerate([self.configs.dataset_conf.train_list, self.configs.dataset_conf.test_list]):
             # 获取测试数据
             dataset_args = self.configs.dataset_conf.get('dataset', {})
             dataset_args.max_duration = max_duration
@@ -138,6 +143,11 @@ class MSERTrainer(object):
                                          audio_featurizer=self.audio_featurizer,
                                          mode='extract_feature',
                                          **dataset_args)
+            save_data_list = data_list.replace('.txt', '_features.txt')
+            if j == 0:
+                self.configs.dataset_conf.train_list = save_data_list
+            elif j == 1:
+                self.configs.dataset_conf.test_list = save_data_list
             save_data_list = data_list.replace('.txt', '_features.txt')
             with open(save_data_list, 'w', encoding='utf-8') as f:
                 for i in tqdm(range(len(test_dataset))):
@@ -151,6 +161,11 @@ class MSERTrainer(object):
 
     # 获取模型
     def __setup_model(self, input_size, is_train=False):
+        """ 获取模型
+
+        :param input_size: 模型输入特征大小
+        :param is_train: 是否获取训练模型
+        """
         # 自动获取列表数量
         if self.configs.model_conf.model_args.get('num_class', None) is None:
             self.configs.model_conf.model_args.num_class = len(self.class_labels)
@@ -174,6 +189,13 @@ class MSERTrainer(object):
             self.model = torch.compile(self.model, mode="reduce-overhead")
 
     def __train_epoch(self, epoch_id, local_rank, writer, nranks=0):
+        """训练一个epoch
+
+        :param epoch_id: 当前epoch
+        :param local_rank: 当前显卡id
+        :param writer: VisualDL对象
+        :param nranks: 所使用显卡的数量
+        """
         train_times, accuracies, loss_sum = [], [], []
         start = time.time()
         for batch_id, (features, label, input_lens_ratio) in enumerate(self.train_loader):

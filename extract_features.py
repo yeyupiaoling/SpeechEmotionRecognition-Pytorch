@@ -15,7 +15,7 @@ print_arguments(args=args)
 # 获取训练器
 trainer = MSERTrainer(configs=args.configs)
 
-# 生成归一化文件
-trainer.get_standard_file(max_duration=args.max_duration)
 # 提取特征保存文件
 trainer.extract_features(save_dir=args.save_dir, max_duration=args.max_duration)
+# 生成归一化文件
+trainer.get_standard_file(max_duration=args.max_duration)
