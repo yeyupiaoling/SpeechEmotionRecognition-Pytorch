@@ -55,6 +55,21 @@ cd SpeechEmotionRecognition-Pytorch/
 pip install .
 ```
 
+## 快速使用
+
+在使用时只需要设置`--use_ms_model=iic/emotion2vec_plus_base`参数和音频路径即可。
+
+```shell
+python infer.py --audio_path=dataset/test.wav --use_ms_model=iic/emotion2vec_plus_base
+```
+
+输出如下：
+
+```
+[2024-07-02 19:45:36.154355 INFO   ] emotion2vec_predict:__init__:27 - 成功加载模型：models/iic/emotion2vec_plus_base
+音频：dataset/test.wav 的预测结果标签为：生气，得分：1.0
+```
+
 ## 准备数据
 
 生成数据列表，用于下一步的读取需要，项目默认提供一个数据集[RAVDESS](https://zenodo.org/record/1188976/files/Audio_Speech_Actors_01-24.zip?download=1)，这个数据集的[介绍页面](https://zenodo.org/record/1188976#.XsAXemgzaUk)，这个数据包含中性、平静、快乐、悲伤、愤怒、恐惧、厌恶、惊讶八种情感，本项目只使用里面的`Audio_Speech_Actors_01-24.zip`，数据集，说话的语句只有`Kids are talking by the door`和`Dogs are sitting by the door`，可以说这个训练集是非常简单的。下载这个数据集并解压到`dataset`目录下。
@@ -258,18 +273,33 @@ shutil.rmtree(f'{user_dir}/.cache/matplotlib', ignore_errors=True)
 ```
 
 
-<br/>
-<div align="center">
-<img src="docs/images/image1.png" alt="打赏作者" width="600">
-</div>
-
-
 # 预测
 
 在训练结束之后，我们得到了一个模型参数文件，我们使用这个模型预测音频。
 
 ```shell
 python infer.py --audio_path=dataset/test.wav
+```
+
+输出如下：
+```
+成功加载模型参数：models/BiLSTM_Emotion2Vec/best_model/model.pth
+[2024-07-02 19:48:42.864262 INFO   ] emotion2vec_predict:__init__:27 - 成功加载模型：models/iic/emotion2vec_base
+音频：dataset/test.wav 的预测结果标签为：angry，得分：0.99995
+```
+
+# 使用Emotion2vec模型预测
+
+项目已经提供了Emotion2vec模型，使用ModelScope公开的Emotion2vec模型预测音频。在使用时只需要设置`--use_ms_model`参数即可，不需要额外配置文件和指定模型路径，首次使用时会自动下载模型文件。支持`iic/emotion2vec_plus_seed`、`iic/emotion2vec_plus_base`、`iic/emotion2vec_plus_large`三个模型。
+
+```shell
+python infer.py --audio_path=dataset/test.wav --use_ms_model=iic/emotion2vec_plus_base
+```
+
+输出如下：
+```
+[2024-07-02 19:45:36.154355 INFO   ] emotion2vec_predict:__init__:27 - 成功加载模型：models/iic/emotion2vec_plus_base
+音频：dataset/test.wav 的预测结果标签为：生气，得分：1.0
 ```
 
 ## 打赏作者
@@ -282,3 +312,4 @@ python infer.py --audio_path=dataset/test.wav
 # 参考资料
 
 1. https://github.com/yeyupiaoling/AudioClassification-Pytorch
+2. https://github.com/alibaba-damo-academy/FunASR
