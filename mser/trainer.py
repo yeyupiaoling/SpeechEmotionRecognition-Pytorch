@@ -98,6 +98,9 @@ class MSERTrainer(object):
                                            sampler=train_sampler,
                                            **data_loader_args)
         # 获取测试数据
+        data_loader_args.drop_last = False
+        dataset_args.max_duration = self.configs.dataset_conf.eval_conf.max_duration
+        data_loader_args.batch_size = self.configs.dataset_conf.eval_conf.batch_size
         self.test_dataset = CustomDataset(data_list_path=self.configs.dataset_conf.test_list,
                                           audio_featurizer=self.audio_featurizer,
                                           mode='eval',
