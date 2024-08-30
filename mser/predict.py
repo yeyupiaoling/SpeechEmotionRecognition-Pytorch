@@ -7,14 +7,12 @@ import numpy as np
 import torch
 import yaml
 
+from loguru import logger
+from yeaudio.audio import AudioSegment
 from mser import SUPPORT_EMOTION2VEC_MODEL
-from mser.data_utils.audio import AudioSegment
 from mser.data_utils.featurizer import AudioFeaturizer
 from mser.models import build_model
-from mser.utils.logger import setup_logger
 from mser.utils.utils import dict_to_object, print_arguments
-
-logger = setup_logger(__name__)
 
 
 class MSERPredictor:

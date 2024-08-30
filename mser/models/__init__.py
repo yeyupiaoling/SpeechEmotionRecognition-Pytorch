@@ -1,10 +1,8 @@
 import importlib
 
+from loguru import logger
 from .base_model import BaseModel
 from .bi_lstm import BiLSTM
-from mser.utils.logger import setup_logger
-
-logger = setup_logger(__name__)
 
 __all__ = ['build_model']
 

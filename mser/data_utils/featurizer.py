@@ -3,10 +3,7 @@ import shutil
 
 import librosa
 import numpy as np
-
-from mser.utils.logger import setup_logger
-
-logger = setup_logger(__name__)
+from loguru import logger
 
 
 class AudioFeaturizer(object):

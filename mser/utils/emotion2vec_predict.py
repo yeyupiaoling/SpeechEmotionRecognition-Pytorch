@@ -6,10 +6,7 @@ import shutil
 import numpy as np
 from funasr import AutoModel
 from modelscope import snapshot_download
-
-from mser.utils.logger import setup_logger
-
-logger = setup_logger(__name__)
+from loguru import logger
 
 
 class Emotion2vecPredict(object):
