@@ -3,7 +3,7 @@ import numpy as np
 from torch.utils.data import Dataset
 from yeaudio.audio import AudioSegment
 
-from mser.data_utils.augmentation import SpeedPerturbAugmentor, VolumePerturbAugmentor, NoisePerturbAugmentor, \
+from yeaudio.augmentation import SpeedPerturbAugmentor, VolumePerturbAugmentor, NoisePerturbAugmentor, \
     ReverbPerturbAugmentor
 from mser.data_utils.featurizer import AudioFeaturizer
 
@@ -43,15 +43,16 @@ class CustomDataset(Dataset):
         self._use_dB_normalization = use_dB_normalization
         self._target_dB = target_dB
         self.aug_conf = aug_conf
+        self.speed_augment = None
+        self.volume_augment = None
+        self.noise_augment = None
+        self.reverb_augment = None
         # 获取数据列表
         with open(data_list_path, 'r', encoding='utf-8') as f:
             self.lines = f.readlines()
         if mode == 'train':
             # 获取数据增强器
-            self.speed_augment = SpeedPerturbAugmentor(**aug_conf.get('speed', {}))
-            self.volume_augment = VolumePerturbAugmentor(**aug_conf.get('volume', {}))
-            self.noise_augment = NoisePerturbAugmentor(**aug_conf.get('noise', {}))
-            self.reverb_augment = ReverbPerturbAugmentor(**aug_conf.get('reverb', {}))
+            self.get_augment()
         # 获取特征器
         self.audio_featurizer = audio_featurizer
         if scaler_path and self.mode != 'create_data':
@@ -92,6 +93,17 @@ class CustomDataset(Dataset):
 
     def __len__(self):
         return len(self.lines)
+
+    # 获取数据增强器
+    def get_augment(self):
+        if self.aug_conf.speed is not None:
+            self.speed_augment = SpeedPerturbAugmentor(**self.aug_conf.speed)
+        if self.aug_conf.volume is not None:
+            self.volume_augment = VolumePerturbAugmentor(self.aug_conf.volume)
+        if self.aug_conf.noise is not None:
+            self.noise_augment = NoisePerturbAugmentor(**self.aug_conf.noise)
+        if self.aug_conf.reverb is not None:
+            self.reverb_augment = ReverbPerturbAugmentor(**self.aug_conf.reverb)
 
     # 音频增强
     def augment_audio(self, audio_segment):
