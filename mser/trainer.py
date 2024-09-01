@@ -214,7 +214,7 @@ class MSERTrainer(object):
                 features = features.to(self.device)
                 label = label.to(self.device).long()
             # 执行模型计算，是否开启自动混合精度
-            with torch.cuda.amp.autocast(enabled=self.configs.train_conf.enable_amp):
+            with torch.autocast('cuda', enabled=self.configs.train_conf.enable_amp):
                 output = self.model(features)
             # 计算损失值
             los = self.loss(output, label)
