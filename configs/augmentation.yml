@@ -29,12 +29,3 @@ reverb:
   prob: 0.0
   # 混响增强的混响文件夹
   reverb_dir: 'dataset/reverb'
-
-# Spec增强
-spec_aug:
-  # 增强概率
-  prob: 1.0
-  # 随机频谱掩码大小
-  freq_mask_width: [ 0, 8 ]
-  # 随机时间掩码大小
-  time_mask_width: [ 0, 10 ]
