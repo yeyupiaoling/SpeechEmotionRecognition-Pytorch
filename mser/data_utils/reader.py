@@ -99,7 +99,7 @@ class CustomDataset(Dataset):
         if self.aug_conf.speed is not None:
             self.speed_augment = SpeedPerturbAugmentor(**self.aug_conf.speed)
         if self.aug_conf.volume is not None:
-            self.volume_augment = VolumePerturbAugmentor(self.aug_conf.volume)
+            self.volume_augment = VolumePerturbAugmentor(**self.aug_conf.volume)
         if self.aug_conf.noise is not None:
             self.noise_augment = NoisePerturbAugmentor(**self.aug_conf.noise)
         if self.aug_conf.reverb is not None:
@@ -107,8 +107,12 @@ class CustomDataset(Dataset):
 
     # 音频增强
     def augment_audio(self, audio_segment):
-        audio_segment = self.speed_augment(audio_segment)
-        audio_segment = self.volume_augment(audio_segment)
-        audio_segment = self.noise_augment(audio_segment)
-        audio_segment = self.reverb_augment(audio_segment)
+        if self.speed_augment is not None:
+            audio_segment = self.speed_augment(audio_segment)
+        if self.volume_augment is not None:
+            audio_segment = self.volume_augment(audio_segment)
+        if self.noise_augment is not None:
+            audio_segment = self.noise_augment(audio_segment)
+        if self.reverb_augment is not None:
+            audio_segment = self.reverb_augment(audio_segment)
         return audio_segment
