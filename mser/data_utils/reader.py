@@ -2,9 +2,9 @@ import joblib
 import numpy as np
 from torch.utils.data import Dataset
 from yeaudio.audio import AudioSegment
+from yeaudio.augmentation import ReverbPerturbAugmentor
+from yeaudio.augmentation import SpeedPerturbAugmentor, VolumePerturbAugmentor, NoisePerturbAugmentor
 
-from yeaudio.augmentation import SpeedPerturbAugmentor, VolumePerturbAugmentor, NoisePerturbAugmentor, \
-    ReverbPerturbAugmentor
 from mser.data_utils.featurizer import AudioFeaturizer
 
 
@@ -42,7 +42,6 @@ class CustomDataset(Dataset):
         self._target_sample_rate = sample_rate
         self._use_dB_normalization = use_dB_normalization
         self._target_dB = target_dB
-        self.aug_conf = aug_conf
         self.speed_augment = None
         self.volume_augment = None
         self.noise_augment = None
@@ -50,9 +49,9 @@ class CustomDataset(Dataset):
         # 获取数据列表
         with open(data_list_path, 'r', encoding='utf-8') as f:
             self.lines = f.readlines()
-        if mode == 'train':
+        if mode == 'train' and aug_conf is not None:
             # 获取数据增强器
-            self.get_augment()
+            self.get_augmentor(aug_conf)
         # 获取特征器
         self.audio_featurizer = audio_featurizer
         if scaler_path and self.mode != 'create_data':
@@ -95,15 +94,15 @@ class CustomDataset(Dataset):
         return len(self.lines)
 
     # 获取数据增强器
-    def get_augment(self):
-        if self.aug_conf.speed is not None:
-            self.speed_augment = SpeedPerturbAugmentor(**self.aug_conf.speed)
-        if self.aug_conf.volume is not None:
-            self.volume_augment = VolumePerturbAugmentor(**self.aug_conf.volume)
-        if self.aug_conf.noise is not None:
-            self.noise_augment = NoisePerturbAugmentor(**self.aug_conf.noise)
-        if self.aug_conf.reverb is not None:
-            self.reverb_augment = ReverbPerturbAugmentor(**self.aug_conf.reverb)
+    def get_augmentor(self, aug_conf):
+        if aug_conf.speed is not None:
+            self.speed_augment = SpeedPerturbAugmentor(**aug_conf.speed)
+        if aug_conf.volume is not None:
+            self.volume_augment = VolumePerturbAugmentor(**aug_conf.volume)
+        if aug_conf.noise is not None:
+            self.noise_augment = NoisePerturbAugmentor(**aug_conf.noise)
+        if aug_conf.reverb is not None:
+            self.reverb_augment = ReverbPerturbAugmentor(**aug_conf.reverb)
 
     # 音频增强
     def augment_audio(self, audio_segment):
