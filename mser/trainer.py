@@ -362,7 +362,7 @@ class MSERTrainer(object):
             if os.path.isdir(resume_model):
                 resume_model = os.path.join(resume_model, 'model.pth')
             assert os.path.exists(resume_model), f"{resume_model} 模型不存在！"
-            model_state_dict = torch.load(resume_model)
+            model_state_dict = torch.load(resume_model, weights_only=False)
             self.model.load_state_dict(model_state_dict)
             logger.info(f'成功加载模型：{resume_model}')
         self.model.eval()
@@ -389,7 +389,9 @@ class MSERTrainer(object):
                 preds.extend(pred.tolist())
                 # 真实标签
                 labels.extend(label.tolist())
-                losses.append(los.data.cpu().numpy())
+                los1 = los.data.cpu().numpy()
+                if not np.isnan(los1):
+                    losses.append(los1)
         loss = float(sum(losses) / len(losses)) if len(losses) > 0 else -1
         acc = float(sum(accuracies) / len(accuracies)) if len(accuracies) > 0 else -1
         # 保存混合矩阵

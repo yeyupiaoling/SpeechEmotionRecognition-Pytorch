@@ -81,7 +81,7 @@ def plot_confusion_matrix(cm, save_path, class_labels, show=False):
         plt.text(x_val, y_val, "%0.2f" % (c,), color='red', fontsize=15, va='center', ha='center')
     m = np.sum(cm, axis=0) + 1e-6
     plt.imshow(cm / m, interpolation='nearest', cmap=plt.cm.binary)
-    plt.title('Confusion Matrix' if is_ascii else '混合矩阵')
+    plt.title('Confusion Matrix' if is_ascii else '混淆矩阵')
     plt.colorbar()
     # 设置类别标签
     xlocations = np.array(range(len(class_labels)))
