@@ -20,7 +20,8 @@ class Emotion2vecPredict(object):
                                log_level="ERROR",
                                device='cuda' if use_gpu else 'cpu',
                                disable_pbar=True,
-                               disable_log=True)
+                               disable_log=True,
+                               disable_update=True)
         logger.info(f"成功加载模型：{save_model_dir}")
 
     def extract_features(self, x, kwargs):
