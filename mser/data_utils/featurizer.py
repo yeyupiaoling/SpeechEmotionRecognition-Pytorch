@@ -33,7 +33,8 @@ class AudioFeaturizer(object):
     def emotion2vec_features(self, x) -> np.ndarray:
         from mser.utils.emotion2vec_predict import Emotion2vecPredict
         if self._feature_model is None:
-            self._feature_model = Emotion2vecPredict('iic/emotion2vec_base', revision="v2.0.4", use_gpu=True)
+            use_gpu = True if torch.cuda.is_available() else False
+            self._feature_model = Emotion2vecPredict('iic/emotion2vec_base', revision="v2.0.4", use_gpu=use_gpu)
         feats = self._feature_model.extract_features(x, self._method_args)
         return feats
 

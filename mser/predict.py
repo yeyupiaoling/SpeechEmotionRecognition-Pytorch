@@ -66,9 +66,9 @@ class MSERPredictor:
             model_path = os.path.join(model_path, 'model.pth')
         assert os.path.exists(model_path), f"{model_path} 模型不存在！"
         if torch.cuda.is_available() and use_gpu:
-            model_state_dict = torch.load(model_path)
+            model_state_dict = torch.load(model_path, weights_only=False)
         else:
-            model_state_dict = torch.load(model_path, map_location='cpu')
+            model_state_dict = torch.load(model_path, map_location='cpu', weights_only=False)
         self.predictor.load_state_dict(model_state_dict)
         print(f"成功加载模型参数：{model_path}")
         self.predictor.eval()
