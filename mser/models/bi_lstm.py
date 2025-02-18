@@ -14,7 +14,7 @@ class BiLSTM(nn.Module):
 
     def forward(self, x):
         x = self.fc0(x)
-        x = x.reshape((x.shape[0], 1, x.shape[1]))
+        x = x.unsqueeze(dim=1)
         y, (h, c) = self.lstm(x)
         x = y.squeeze(axis=1)
         x = self.tanh(x)
