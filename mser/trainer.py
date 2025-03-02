@@ -1,5 +1,6 @@
 import os
 import platform
+import sys
 import time
 from datetime import timedelta
 
@@ -28,13 +29,21 @@ from mser.utils.utils import dict_to_object, plot_confusion_matrix, print_argume
 
 
 class MSERTrainer(object):
-    def __init__(self, configs, use_gpu=True, data_augment_configs=None, overwrites=None):
-        """ mser集成工具类
+    def __init__(self,
+                 configs,
+                 use_gpu=True,
+                 data_augment_configs=None,
+                 num_class=None,
+                 overwrites=None,
+                 log_level="error"):
+        """语音情感训练工具类
 
-        :param configs: 配置字典
+        :param configs: 配置文件路径，或者模型名称，如果是模型名称则会使用默认的配置文件
         :param use_gpu: 是否使用GPU训练模型
         :param data_augment_configs: 数据增强配置字典或者其文件路径
+        :param num_class: 分类大小，对应配置文件中的model_conf.model_args.num_class
         :param overwrites: 覆盖配置文件中的参数，比如"train_conf.max_epoch=100"，多个用逗号隔开
+        :param log_level: 打印的日志等级，可选值有："debug", "info", "warning", "error"
         """
         if use_gpu:
             assert (torch.cuda.is_available()), 'GPU不可用'
@@ -43,11 +52,21 @@ class MSERTrainer(object):
             os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
             self.device = torch.device("cpu")
         self.use_gpu = use_gpu
+        self.log_level = log_level.upper()
+        logger.remove()
+        logger.add(sink=sys.stdout, level=self.log_level)
         # 读取配置文件
         if isinstance(configs, str):
+            # 获取当前程序绝对路径
+            absolute_path = os.path.dirname(__file__)
+            # 获取默认配置文件路径
+            config_path = os.path.join(absolute_path, f"configs/{configs}.yml")
+            configs = config_path if os.path.exists(config_path) else configs
             with open(configs, 'r', encoding='utf-8') as f:
                 configs = yaml.load(f.read(), Loader=yaml.FullLoader)
         self.configs = dict_to_object(configs)
+        if num_class is not None:
+            self.configs.model_conf.model_args.num_class = num_class
         # 覆盖配置文件中的参数
         if overwrites:
             overwrites = overwrites.split(",")
@@ -192,7 +211,8 @@ class MSERTrainer(object):
         # 获取模型
         self.model = build_model(input_size=input_size, configs=self.configs)
         self.model.to(self.device)
-        summary(self.model, input_size=(1, self.test_dataset.audio_featurizer.feature_dim))
+        if self.log_level == "DEBUG" or self.log_level == "INFO":
+            summary(self.model, input_size=(1, self.test_dataset.audio_featurizer.feature_dim))
         # print(self.model)
         # 获取损失函数
         label_smoothing = self.configs.train_conf.get('label_smoothing', 0.0)
@@ -282,12 +302,14 @@ class MSERTrainer(object):
     def train(self,
               save_model_path='models/',
               log_dir='log/',
+              max_epoch=None,
               resume_model=None,
               pretrained_model=None):
         """
         训练模型
         :param save_model_path: 模型保存的路径
         :param log_dir: 保存VisualDL日志文件的路径
+        :param max_epoch: 最大训练轮数，对应配置文件中的train_conf.max_epoch
         :param resume_model: 恢复训练，当为None则不使用预训练模型
         :param pretrained_model: 预训练模型的路径，当为None则不使用预训练模型
         """
@@ -327,6 +349,8 @@ class MSERTrainer(object):
         self.test_log_step, self.train_log_step = 0, 0
         if local_rank == 0:
             writer.add_scalar('Train/lr', self.scheduler.get_last_lr()[0], last_epoch)
+        if max_epoch is not None:
+            self.configs.train_conf.max_epoch = max_epoch
         # 最大步数
         self.max_step = len(self.train_loader) * self.configs.train_conf.max_epoch
         self.train_step = max(last_epoch, 0) * len(self.train_loader)

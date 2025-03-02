@@ -1,4 +1,5 @@
 import os
+import sys
 from io import BufferedReader
 from typing import List
 
@@ -21,14 +22,16 @@ class MSERPredictor:
                  use_ms_model=None,
                  model_path='models/BiLSTM_Emotion2Vec/best_model/',
                  use_gpu=True,
-                 overwrites=None):
-        """
-        声音分类预测工具
-        :param configs: 配置参数
+                 overwrites=None,
+                 log_level="info"):
+        """语音情感训练工具类
+
+        :param configs: 配置文件路径，或者模型名称，如果是模型名称则会使用默认的配置文件
         :param use_ms_model: 使用ModelScope上公开Emotion2vec的模型
         :param model_path: 导出的预测模型文件夹路径
         :param use_gpu: 是否使用GPU预测
         :param overwrites: 覆盖配置文件中的参数，比如"train_conf.max_epoch=100"，多个用逗号隔开
+        :param log_level: 打印的日志等级，可选值有："debug", "info", "warning", "error"
         """
         if use_gpu:
             assert (torch.cuda.is_available()), 'GPU不可用'
@@ -36,6 +39,9 @@ class MSERPredictor:
         else:
             os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
             self.device = torch.device("cpu")
+        self.log_level = log_level.upper()
+        logger.remove()
+        logger.add(sink=sys.stdout, level=self.log_level)
         self.use_ms_model = use_ms_model
         # 使用ModelScope上的模型
         if use_ms_model is not None:
@@ -46,6 +52,11 @@ class MSERPredictor:
             return
         # 读取配置文件
         if isinstance(configs, str):
+            # 获取当前程序绝对路径
+            absolute_path = os.path.dirname(__file__)
+            # 获取默认配置文件路径
+            config_path = os.path.join(absolute_path, f"configs/{configs}.yml")
+            configs = config_path if os.path.exists(config_path) else configs
             with open(configs, 'r', encoding='utf-8') as f:
                 configs = yaml.load(f.read(), Loader=yaml.FullLoader)
         self.configs = dict_to_object(configs)

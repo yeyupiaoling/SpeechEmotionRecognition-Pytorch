@@ -19,7 +19,7 @@ def load_pretrained(model, pretrained_model):
     if os.path.isdir(pretrained_model):
         pretrained_model = os.path.join(pretrained_model, 'model.pth')
     assert os.path.exists(pretrained_model), f"{pretrained_model} 模型不存在！"
-    model_state_dict = torch.load(pretrained_model)
+    model_state_dict = torch.load(pretrained_model, weights_only=False)
     if isinstance(model, torch.nn.parallel.DistributedDataParallel):
         model_dict = model.module.state_dict()
     else:
