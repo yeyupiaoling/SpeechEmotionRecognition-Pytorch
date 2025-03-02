@@ -410,7 +410,7 @@ class MSERTrainer(object):
 
         accuracies, losses, preds, labels = [], [], [], []
         with torch.no_grad():
-            for batch_id, (features, label, input_lens_ratio) in enumerate(tqdm(self.test_loader)):
+            for batch_id, (features, label, input_lens_ratio) in enumerate(tqdm(self.test_loader, desc='执行评估')):
                 if self.stop_eval: break
                 features = features.to(self.device)
                 label = label.to(self.device).long()
