@@ -1,4 +1,4 @@
-__version__ = "0.0.10"
+__version__ = "0.0.11"
 # 项目支持的模型
 SUPPORT_EMOTION2VEC_MODEL = ["iic/emotion2vec_plus_seed",
                              "iic/emotion2vec_plus_base",

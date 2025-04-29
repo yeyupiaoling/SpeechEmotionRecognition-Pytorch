@@ -2,6 +2,7 @@ import os
 import platform
 import sys
 import time
+import uuid
 from datetime import timedelta
 
 import joblib
@@ -192,7 +193,7 @@ class MSERTrainer(object):
                 for i in tqdm(range(len(test_dataset))):
                     feature, label = test_dataset[i]
                     label = int(label)
-                    save_path = os.path.join(save_dir, str(label), f'{int(time.time() * 1000)}.npy')
+                    save_path = os.path.join(save_dir, str(label), f'{str(uuid.uuid4())}.npy')
                     os.makedirs(os.path.dirname(save_path), exist_ok=True)
                     np.save(save_path, feature)
                     f.write(f'{save_path}\t{label}\n')
